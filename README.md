@@ -42,13 +42,14 @@ T3 Code refuses changes to a thread whose runtime mode is broader than the threa
 
 ### When T3 Code changes
 
-T3 Code can rename tools, parameters and statuses between versions. The skill does not depend on exact names: its first step finds the T3 tools by keyword and compares them with [`references/tool-surface.md`](t3-tidy/references/tool-surface.md), which records the names last checked and the server version they were checked against.
+T3 Code can rename tools, parameters and statuses between versions. The skill does not depend on exact names: its first step loads the tool names listed in [`references/tool-surface.md`](t3-tidy/references/tool-surface.md), which records the names last checked and the server version they were checked against. For any tool that does not load, it searches by keyword, one capability at a time, and compares what it finds with the reference file.
 
 - If only names changed, the skill carries on with the new names and lists each change under **Tool surface changes** in its report.
+- If the tool or action that settles or renames a thread changed, the skill runs as a dry run and waits for you to confirm the new names before changing anything.
 - If a capability it needs is gone, the skill stops before changing anything and reports what is missing.
 - A thread status the reference file does not list counts as busy, so the skill leaves that thread alone.
 
-The `allowed-tools` line in `SKILL.md` lists tools by exact name, so a renamed tool asks for permission instead of running unprompted. That prompt is a sign the reference file is out of date. To fix it, update `references/tool-surface.md` and the `allowed-tools` line, or open an issue with the **Tool surface changes** section of the report.
+The `allowed-tools` line in `SKILL.md` lists tools by exact name, so outside bypass and auto permission modes, a renamed tool asks for permission instead of running unprompted. That prompt is a sign the reference file is out of date. In bypass and auto modes there is no prompt, and the dry-run rule above is the safeguard. To fix it, update `references/tool-surface.md` and the `allowed-tools` line, or open an issue with the **Tool surface changes** section of the report.
 
 ## License
 

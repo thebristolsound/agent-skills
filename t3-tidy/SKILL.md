@@ -23,7 +23,7 @@ Load the last-known tools in one call: `ToolSearch` with `select:` and every las
 Then take exactly one outcome:
 
 - **Unchanged.** Every role matches its last-known name. Continue.
-- **Renamed.** Every role has a match, but some names, parameters or enum values differ. Continue with the names you found, and list each difference under **Tool surface changes** in the report.
+- **Renamed.** Every role has a match, but some names, parameters or enum values differ. Continue with the names you found, and list each difference under **Tool surface changes** in the report. If the Settle or Rename role resolved to a different tool or action value than the reference file lists, run as a dry run: go from step 5 straight to the step 7 report, and make no write until the user confirms the new tool and action. A wrong match for a write role changes threads; a wrong match for a read role only misreads them.
 - **Missing.** A role has no match, or the match lacks a capability the table marks required (a settled filter, a settle action, a rename action, paging). Stop before any write. Report which role is missing, the server version, and the closest tools you found.
 
 The thread status enum decides which threads count as busy. A status that the reference file does not list counts as busy: keep that thread live and report the status as new.
