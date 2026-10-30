@@ -4,7 +4,7 @@ Agent skills for [Claude Code](https://code.claude.com/docs/en/skills). Each dir
 
 | Skill | What it does |
 |---|---|
-| [t3-tidy](t3-tidy/SKILL.md) | Settles finished [T3 Code](https://github.com/pingdotgg/t3code) threads in one project, folds duplicates, renames unclear titles, and reports what each settled thread still leaves to you. |
+| [t3-tidy](t3-tidy/SKILL.md) | Settles finished [T3 Code](https://github.com/pingdotgg/t3code) threads in one project, folds duplicates, renames unclear titles, and reports what each settled thread still leaves to you. With `merge`, it gathers related threads into one hub thread. |
 
 ## Install
 
@@ -32,11 +32,23 @@ Run it from a thread in the project you want to tidy:
 /t3-tidy
 /t3-tidy dry run
 /t3-tidy gridcast dry run
+/t3-tidy merge
+/t3-tidy merge dry run
 ```
 
 The argument is a project name, matched loosely; leave it out to tidy the current thread's project. `dry run` stops after classifying and prints the plan without changing anything.
 
-The skill makes two kinds of change: it settles threads and renames them. You can undo both from the T3 Code sidebar, and a settled thread keeps its history. The skill never sends a message to another thread.
+By default the skill makes two kinds of change: it settles threads and renames them. You can undo both from the T3 Code sidebar, and a settled thread keeps its history. Without `merge`, the skill never sends a message to another thread.
+
+### Merge mode
+
+`merge` finds threads that worked on the same thing and gathers them into one new top-level hub thread. Threads are grouped by shared evidence: a pull request, an issue number, a branch or a worktree. A similar title alone does not group them, and threads that are still live never join a group.
+
+For each group, the skill reads the threads in full and writes a summary covering the goal, what shipped, decisions, open items, where the work lives, and links to every source thread. It shows you all the groups and asks once before changing anything. After you confirm, it launches a hub thread with the summary as its first message, and then settles the grouped threads. If a launch fails, the skill settles nothing in that group.
+
+Each hub launch starts one short run, in which the hub replies with a one-line confirmation. `merge dry run` prints the groups and summaries without launching or settling anything.
+
+T3 Code's built-in `merge_back` is not used: it only merges a fork back into the thread it came from, and threads started separately are never forks of each other.
 
 T3 Code refuses changes to a thread whose runtime mode is broader than the thread running the skill. If that happens, the skill stops after its first change and asks you to switch the current thread to full access.
 

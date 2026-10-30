@@ -1,16 +1,16 @@
 ---
 name: t3-tidy
-description: Settle finished T3 Code threads in one project, fold duplicate threads into one, rename unclear titles, and report what each settled thread still leaves to you.
+description: Settle finished T3 Code threads in one project, fold duplicate threads into one, rename unclear titles, and report what each settled thread still leaves to you. With merge, gather related threads into one new hub thread that holds their summary.
 disable-model-invocation: true
-argument-hint: "[project name, defaults to this thread's project] [dry run]"
-allowed-tools: ToolSearch Read Bash(gh *) Bash(jq *) Bash(git *) Bash(ls *) mcp__t3-code__t3_environment_read mcp__t3-code__t3_project_list mcp__t3-code__t3_thread_list mcp__t3-code__t3_thread_read mcp__t3-code__t3_thread_organize mcp__t3-code__t3_thread_update
+argument-hint: "[project name, defaults to this thread's project] [merge] [dry run]"
+allowed-tools: ToolSearch Read Bash(gh *) Bash(jq *) Bash(git *) Bash(ls *) mcp__t3-code__t3_environment_read mcp__t3-code__t3_project_list mcp__t3-code__t3_thread_list mcp__t3-code__t3_thread_read mcp__t3-code__t3_thread_organize mcp__t3-code__t3_thread_update mcp__t3-code__t3_thread_launch AskUserQuestion
 ---
 
 # Tidy T3 threads
 
-Sorts one project's unsettled threads into **live** and **finished**, settles the finished ones, and hands back a list of what you still owe. Settle and rename are the only writes: both are reversible from the sidebar, and a settled thread keeps its history. The skill reads threads and never sends to them, because a send starts a run.
+Sorts one project's unsettled threads into **live** and **finished**, settles the finished ones, and hands back a list of what you still owe. Settle and rename are the only changes it makes to existing threads: both are reversible from the sidebar, and a settled thread keeps its history. Without `merge`, the skill reads threads and never sends to them, because a send starts a run. With `merge`, it also launches one hub thread per group of related threads, and each launch starts one short run; [references/merge-mode.md](references/merge-mode.md) holds those steps.
 
-**Arguments:** `$ARGUMENTS`. A project name, matched loosely against project titles; empty means the project this thread belongs to. If the arguments contain `dry run`, go from step 5 straight to the step 7 report, written as the plan.
+**Arguments:** `$ARGUMENTS`. A project name, matched loosely against project titles; empty means the project this thread belongs to. If the arguments contain `merge`, run merge mode (steps M1 to M5 in [references/merge-mode.md](references/merge-mode.md)) between steps 5 and 6. If the arguments contain `dry run`, go from step 5 straight to the step 7 report, written as the plan; with `merge`, run M1 to M4 first.
 
 The steps below name each T3 tool by its role ("the thread-list tool"). Step 1 resolves every role to the tool, parameter and field names the running T3 Code version uses; use those names everywhere after it.
 
@@ -23,8 +23,8 @@ Load the last-known tools in one call: `ToolSearch` with `select:` and every las
 Then take exactly one outcome:
 
 - **Unchanged.** Every role matches its last-known name. Continue.
-- **Renamed.** Every role has a match, but some names, parameters or enum values differ. Continue with the names you found, and list each difference under **Tool surface changes** in the report. If the Settle or Rename role resolved to a different tool or action value than the reference file lists, run as a dry run: go from step 5 straight to the step 7 report, and make no write until the user confirms the new tool and action. A wrong match for a write role changes threads; a wrong match for a read role only misreads them.
-- **Missing.** A role has no match, or the match lacks a capability the table marks required (a settled filter, a settle action, a rename action, paging). Stop before any write. Report which role is missing, the server version, and the closest tools you found.
+- **Renamed.** Every role has a match, but some names, parameters or enum values differ. Continue with the names you found, and list each difference under **Tool surface changes** in the report. If the Settle, Rename or (with `merge`) Launch role resolved to a different tool or action value than the reference file lists, run as a dry run: go from step 5 straight to the step 7 report, and make no write until the user confirms the new tool and action. A wrong match for a write role changes threads; a wrong match for a read role only misreads them.
+- **Missing.** A role has no match, or the match lacks a capability the table marks required (a settled filter, a settle action, a rename action, paging; with `merge`, a launch tool that takes a title and a first message). Stop before any write. Report which role is missing, the server version, and the closest tools you found.
 
 The thread status enum decides which threads count as busy. A status that the reference file does not list counts as busy: keep that thread live and report the status as new.
 
@@ -40,7 +40,7 @@ Done when every unsettled thread in the project, top-level and subagent, is on t
 
 ## 3. Read each thread's tail
 
-Skip the current thread, snoozed threads, and busy threads (see step 1). For every other top-level thread, call the thread-read tool starting 15 items before the end (floor 0), 3 items per page, about 450 characters per item, one run, and follow the next-page position until there are no more. The last item is often a server-sent `/compact`; the thread's real ending is the assistant message before it. Note the branch and worktree path the read returns.
+Skip the current thread, snoozed threads, and busy threads (see step 1). For every other top-level thread, call the thread-read tool starting 15 items before the end, 3 items per page, about 450 characters per item, one run, and follow the next-page position until there are no more. The start position is exclusive: pass item count minus 16, and omit it when that is below 0, or the first item is skipped. The last item is often a server-sent `/compact`; the thread's real ending is the assistant message before it. Note the branch and worktree path the read returns.
 
 Done when you hold, for every top-level thread read, its last user message and its last assistant message.
 
@@ -63,25 +63,26 @@ Done when every item you will report as still owed was checked this run, or mark
 
 Subagent threads follow their parent: settle each one whose parent is settled or being settled, and that is not busy. Leave a live parent's subagents in place, since the parent may still message them.
 
-Done when every thread on the inventory carries exactly one verdict, plus a rename where one applies.
+Done when every thread on the inventory carries exactly one verdict, plus a rename where one applies. With `merge`, continue to M1 before step 6.
 
 ## 6. Apply
 
-Make one change by itself first. T3 refuses changes to a thread whose runtime mode is broader than this thread's; this thread's live mode can differ from what the thread list shows for it. On that refusal, make no further changes: report the plan, and ask the user to switch this thread to full access and say go.
+Make one change by itself first; with `merge`, that is the first hub launch. T3 refuses changes to a thread whose runtime mode is broader than this thread's; this thread's live mode can differ from what the thread list shows for it. On that refusal, make no further changes: report the plan, and ask the user to switch this thread to full access and say go.
 
-Then make the rest in parallel. A settle refused because the thread is running means the thread started a run after you read it: move it to Kept, reason `started a run during cleanup`, and leave it running.
+Then make the rest in parallel. With `merge`, launch each group's hub before settling its members, as M5 describes. A settle refused because the thread is running means the thread started a run after you read it: move it to Kept, reason `started a run during cleanup`, and leave it running.
 
 Done when every planned change returned success or carries a recorded reason it did not.
 
 ## 7. Verify and report
 
-Re-run the inventory. Report any thread created since step 2 as `new since the start, untouched`.
+Re-run the inventory. Report any thread created since step 2 as `new since the start, untouched`, except the hubs this run launched.
 
 Lead with the count, unsettled before and after. Then:
 
 - **Kept**: each thread with one line saying why it is live.
 - **Settled**: a table of thread and *still on you*, "nothing" where nothing is.
 - **Renamed** and **Folded**: old title to new.
+- **Merged**: only with `merge`. Each hub as a link, the members it settled, and any related thread left live.
 - **Skipped**: anything that failed, and why.
 - **Tool surface changes**: only when step 1 found any. Each old name to new name, any new status, and the server version, so the reference file can be updated.
 

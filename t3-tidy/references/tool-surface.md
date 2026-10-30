@@ -14,14 +14,16 @@ The tools come from the T3 Code MCP server, which Claude Code names `t3-code`, s
 | Thread read | `t3_thread_read` | Parameters `threadId`, `afterPosition`, `limit`, `maxCharsPerItem`, `runLimit` | Yes |
 | Settle | `t3_thread_organize` | Parameters `threadId`, `action` with the value `settle` | Yes |
 | Rename | `t3_thread_update` | Parameters `threadId`, `action` with the value `rename`, `title` | Yes |
+| Launch | `t3_thread_launch` | Parameters `projectId`, `title`, `message` (max length 120000), `clientRequestId`, `workspaceStrategy` with `type` value `existing_worktree` and `worktreePath` | With `merge` only |
 
 ## Response fields
 
 | Tool | Fields |
 |---|---|
 | Thread list | `threads`, `nextCursor` (a numeric offset, null on the last page), `total`, `currentThreadId`; per thread `threadId`, `title`, `link`, `status`, `itemCount`, `pullRequests`, `parentThreadId`, `snoozed`, `updatedAt` |
-| Thread read | `items` (each with `type`, `text`, `position`), `nextPosition`, `hasMore`; under `thread`, `branch` and `worktreePath` |
-| Settle and rename | A success response; the first version of this skill saw a `sequence` number in it |
+| Thread read | `items` (each with `type`, `text`, `position`, `textTruncated`, `nextTextOffset`, `itemId`), `nextPosition`, `hasMore`; under `thread`, `branch` and `worktreePath`. `afterPosition` is exclusive |
+| Settle and rename | A `sequence` number |
+| Launch | `threadId`, `link`, `runId`, `status` |
 
 ## Thread statuses
 
