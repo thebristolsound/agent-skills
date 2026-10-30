@@ -34,7 +34,7 @@ Done when every role has a resolved name, or the run has stopped with a report.
 
 ## 2. Inventory
 
-Call the thread-list tool with the project's id, unsettled only, subagents included, the largest page size, and page until the response says there is no next page. A page this size usually overflows and lands in a file; query that file with `jq`. Hold per thread: id, title, link, status, item count, pull requests, parent thread id, snoozed state, updated time.
+Call the thread-list tool with the project's id, unsettled only, subagents included, the largest page size, and page until the response says there is no next page. A page this size usually overflows and lands in a file; query that file with `jq`. Hold per thread: id, title, link, status, item count, pull requests, parent thread id, snoozed state, updated time. From the project list, hold the project's repository as `owner/name`, or none when the project has no repository identity.
 
 Done when every unsettled thread in the project, top-level and subagent, is on the inventory.
 
@@ -46,7 +46,12 @@ Done when you hold, for every top-level thread read, its last user message and i
 
 ## 4. Check the loose ends
 
-A thread's last message is a claim about the world as it was. For every issue, PR, file, script, setting or draft that a tail names as pending, look at its current state: `git -C <worktree path> status --short` for uncommitted drafts, `ls` for files and scripts, and `gh issue view` / `gh pr view` (`-R owner/repo` outside the current repository) for GitHub items.
+A thread's last message is a claim about the world as it was. For every issue, PR, file, script, setting or draft that a tail names as pending, look at its current state:
+
+- **Worktree.** Check the path with `ls -d` first. A missing path is `worktree gone`. A path where `git -C <path> rev-parse` fails is not a git repository and holds no uncommitted draft. Otherwise `git -C <path> status --short` shows uncommitted drafts.
+- **Files and scripts.** `ls`.
+- **Issues and PRs.** `gh issue view` or `gh pr view` with `-R owner/repo`. Take the repository from, in order: an `owner/repo` or URL the tail names, the PR's repository in the thread list, the project's repository from step 2. With none of these, mark the item `not checked: no repository`.
+- **Open PRs.** Also read `gh pr view <n> -R owner/repo --json state,isDraft,reviewDecision,mergeable,statusCheckRollup`; step 5 decides on these fields.
 
 The PR state in the thread list is a cache. When `gh` is missing or not signed in (`gh auth status` fails), use the cached state, and mark every PR line in the report `from the T3 cache, not checked`.
 
@@ -56,12 +61,12 @@ Done when every item you will report as still owed was checked this run, or mark
 
 | Verdict | When |
 |---|---|
-| **Keep live** | Busy; snoozed; the current thread; an open PR the thread will push to again; an uncommitted draft, or a question to you, that the thread acts on once you answer. |
-| **Settle** | The answer was delivered, or every remaining step is yours alone (send a message, run a script, click in a browser). Record that step as *still on you*. |
+| **Keep live** | Busy; snoozed; the current thread; an open PR that still needs work, meaning it is a draft, has changes requested, has a failing check, or is not mergeable; an open PR the tail names a next step for that the thread itself takes; an uncommitted draft the thread will finish; a question to you whose answer starts a step the thread takes ("Should I push the branch?"). A question about a step you take yourself, such as deleting a label, does not keep a thread live: record it as *still on you*. |
+| **Settle** | The answer was delivered, or every remaining step is yours alone (send a message, run a script, click in a browser, review and merge a ready PR). Record that step as *still on you*. |
 | **Fold** | Two or more threads cover one piece of work. Keep the one holding the latest state, rename it to name the whole workstream, settle the others, and carry their open items into its *still on you* line. |
 | **Rename** | The title is cut off with `...`, is a raw lowercase prompt, or names the request rather than the work. New title: Title Case, six words or fewer, naming the work. |
 
-Subagent threads follow their parent: settle each one whose parent is settled or being settled, and that is not busy. Leave a live parent's subagents in place, since the parent may still message them.
+Subagent threads follow their parent: settle each one whose parent is settled, archived, gone, or being settled, and that is not busy. Leave a live parent's subagents in place, since the parent may still message them. A parent missing from the inventory is settled, archived or gone, and the inventory cannot say which: read each such parent once with the thread-read tool, 1 item of 1 character, and check `settled` and `archived` under `thread`. A read that fails means the parent is gone.
 
 Done when every thread on the inventory carries exactly one verdict, plus a rename where one applies. With `merge`, continue to M1 before step 6.
 

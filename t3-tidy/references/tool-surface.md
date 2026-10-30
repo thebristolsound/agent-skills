@@ -9,7 +9,7 @@ The tools come from the T3 Code MCP server, which Claude Code names `t3-code`, s
 | Role | Last-known tool | What the skill needs from it | Required |
 |---|---|---|---|
 | Environment read | `t3_environment_read` | `serverVersion` in the response | No |
-| Project list | `t3_project_list` | `id` and `title` per project | Yes |
+| Project list | `t3_project_list` | `id`, `title`, and `repositoryIdentity` (with `owner` and `name`, or null) per project | Yes |
 | Thread list | `t3_thread_list` | Parameters `projectId`, `settled`, `includeSubagents`, `limit` (max 100), `cursor`; a `statuses` enum | Yes |
 | Thread read | `t3_thread_read` | Parameters `threadId`, `afterPosition`, `limit`, `maxCharsPerItem`, `runLimit` | Yes |
 | Settle | `t3_thread_organize` | Parameters `threadId`, `action` with the value `settle` | Yes |
@@ -21,7 +21,7 @@ The tools come from the T3 Code MCP server, which Claude Code names `t3-code`, s
 | Tool | Fields |
 |---|---|
 | Thread list | `threads`, `nextCursor` (a numeric offset, null on the last page), `total`, `currentThreadId`; per thread `threadId`, `title`, `link`, `status`, `itemCount`, `pullRequests`, `parentThreadId`, `snoozed`, `updatedAt` |
-| Thread read | `items` (each with `type`, `text`, `position`, `textTruncated`, `nextTextOffset`, `itemId`), `nextPosition`, `hasMore`; under `thread`, `branch` and `worktreePath`. `afterPosition` is exclusive |
+| Thread read | `items` (each with `type`, `text`, `position`, `textTruncated`, `nextTextOffset`, `itemId`), `nextPosition`, `hasMore`; under `thread`, `branch`, `worktreePath`, `settled` and `archived`. `afterPosition` is exclusive |
 | Settle and rename | A `sequence` number |
 | Launch | `threadId`, `link`, `runId`, `status` |
 
