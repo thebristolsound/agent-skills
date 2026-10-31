@@ -40,9 +40,13 @@ Done when every unsettled thread in the project, top-level and subagent, is on t
 
 ## 3. Read each thread's tail
 
-Skip the current thread, snoozed threads, and busy threads (see step 1). For every other top-level thread, call the thread-read tool starting 15 items before the end, 3 items per page, about 450 characters per item, one run, and follow the next-page position until there are no more. The start position is exclusive: pass item count minus 16, and omit it when that is below 0, or the first item is skipped. The last item is often a server-sent `/compact`; the thread's real ending is the assistant message before it. Note the branch and worktree path the read returns.
+Skip the current thread, snoozed threads, and busy threads (see step 1). For every other top-level thread, call the thread-read tool in its messages view, starting 15 items before the end, 5 items per page, about 450 characters per item, one run, and follow the next-page position until there are no more. The start position is exclusive: pass item count minus 16, and omit it when that is below 0, or the first item is skipped. Note the branch and worktree path the read returns.
 
-Done when you hold, for every top-level thread read, its last user message and its last assistant message.
+The item count covers every timeline item, but the messages view returns only messages, so 15 items can hold no user message at all. When the window has none, read the window before it, twice as wide: if the last window started after position `p` and spanned `w` items, pass `p` minus `2w` (omitted below 0), and stop paging once positions pass `p`. Repeat until a user message turns up, the read starts at position 0, or 500 items have been read back; in the last two cases, record that the thread has no user message in that range. A user message whose `creationSource` is `server`, such as the `/compact` that often ends a thread, was not sent by the user and does not count; the thread's real ending is the assistant message before it.
+
+The last assistant message usually holds the deciding sentence at its end. When it comes back with `textTruncated`, continue it with its item id and `textOffset` set to `nextTextOffset` until it is complete.
+
+Done when you hold, for every top-level thread read, its last user message or a record that none was found, and its last assistant message in full.
 
 ## 4. Check the loose ends
 
